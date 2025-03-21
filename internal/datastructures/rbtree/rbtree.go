@@ -5,6 +5,8 @@
 // O(log n) time complexity for basic operations.
 package rbtree
 
+import "cmp"
+
 type Color bool
 
 const (
@@ -12,25 +14,24 @@ const (
 	Black Color = false
 )
 
-type Node struct {
-	key    int
-	color  Color
-	left   *Node
-	right  *Node
-	parent *Node
+type Node[T cmp.Ordered, K any] struct {
+	key                 T
+	value               K
+	color               Color
+	left, right, parent *Node[T, K]
 }
 
 // RBTree represents a Red-Black Tree instance.
 // Use New() to create a new tree instance.
-type RBTree struct {
-	root    *Node
-	nilNode *Node // Sentinel node
+type RBTree[T cmp.Ordered, K any] struct {
+	root    *Node[T, K]
+	nilNode *Node[T, K] // Sentinel node
 }
 
 // New creates and returns a new empty Red-Black Tree.
-func NewRBTree() *RBTree {
-	nilNode := &Node{color: Black}
-	return &RBTree{
+func New[T cmp.Ordered, K any]() *RBTree[T, K] {
+	nilNode := &Node[T, K]{color: Black}
+	return &RBTree[T, K]{
 		root:    nilNode,
 		nilNode: nilNode,
 	}
@@ -38,9 +39,10 @@ func NewRBTree() *RBTree {
 
 // Insert adds a new key to the tree while maintaining
 // Red-Black Tree properties.
-func (t *RBTree) Insert(key int) {
-	newNode := &Node{
+func (t *RBTree[T, K]) Insert(key T, value K) {
+	newNode := &Node[T, K]{
 		key:    key,
+		value:  value,
 		color:  Red,
 		left:   t.nilNode,
 		right:  t.nilNode,
@@ -71,7 +73,7 @@ func (t *RBTree) Insert(key int) {
 	t.fixInsert(newNode)
 }
 
-func (t *RBTree) fixInsert(x *Node) {
+func (t *RBTree[T, K]) fixInsert(x *Node[T, K]) {
 	for x.parent.color == Red {
 		if x.parent == x.parent.parent.left {
 			y := x.parent.parent.right
@@ -110,7 +112,18 @@ func (t *RBTree) fixInsert(x *Node) {
 	t.root.color = Black
 }
 
-func (t *RBTree) leftRotate(x *Node) {
+func (t *RBTree[T, K]) leftRotate(x *Node[T, K]) {
+	/*
+		Left rotation around node x:
+			    Before:               After:
+		          P                    P
+		          |                    |
+		          x                    y
+		         / \                  / \
+		        A   y       →        x   C
+		           / \              / \
+		          B   C            A   B
+	*/
 	y := x.right
 	x.right = y.left
 	if y.left != t.nilNode {
@@ -128,7 +141,18 @@ func (t *RBTree) leftRotate(x *Node) {
 	x.parent = y
 }
 
-func (t *RBTree) rightRotate(y *Node) {
+func (t *RBTree[T, K]) rightRotate(y *Node[T, K]) {
+	/*
+		Right rotation around node y:
+		    Before:               After:
+		       P                    P
+		       |                    |
+		       y                    x
+		      / \                  / \
+		     x   C       →        A   y
+		    / \                      / \
+		   A   B					B   C
+	*/
 	x := y.left
 	y.left = x.right
 	if x.right != t.nilNode {
@@ -149,13 +173,13 @@ func (t *RBTree) rightRotate(y *Node) {
 // Delete removes a key from the tree while maintaining
 // Red-Black Tree properties. If key doesn't exist,
 // the operation is a no-op.
-func (t *RBTree) Delete(key int) {
+func (t *RBTree[T, K]) Delete(key T) {
 	z := t.findNode(key)
 	if z == t.nilNode {
 		return
 	}
 
-	var x *Node
+	var x *Node[T, K]
 	y := z
 	yOriginalColor := y.color
 
@@ -187,7 +211,7 @@ func (t *RBTree) Delete(key int) {
 	}
 }
 
-func (t *RBTree) transplant(u, v *Node) {
+func (t *RBTree[T, K]) transplant(u, v *Node[T, K]) {
 	if u.parent == t.nilNode {
 		t.root = v
 	} else if u == u.parent.left {
@@ -198,14 +222,14 @@ func (t *RBTree) transplant(u, v *Node) {
 	v.parent = u.parent
 }
 
-func (t *RBTree) minimum(x *Node) *Node {
+func (t *RBTree[T, K]) minimum(x *Node[T, K]) *Node[T, K] {
 	for x.left != t.nilNode {
 		x = x.left
 	}
 	return x
 }
 
-func (t *RBTree) fixDelete(x *Node) {
+func (t *RBTree[T, K]) fixDelete(x *Node[T, K]) {
 	for x != t.root && x.color == Black {
 		if x == x.parent.left {
 			w := x.parent.right
@@ -260,7 +284,7 @@ func (t *RBTree) fixDelete(x *Node) {
 	x.color = Black
 }
 
-func (t *RBTree) findNode(key int) *Node {
+func (t *RBTree[T, K]) findNode(key T) *Node[T, K] {
 	current := t.root
 	for current != t.nilNode {
 		if key == current.key {
@@ -275,6 +299,42 @@ func (t *RBTree) findNode(key int) *Node {
 }
 
 // Exists checks if a key is present in the tree.
-func (t *RBTree) Exists(key int) bool {
+func (t *RBTree[T, K]) Exists(key T) bool {
 	return t.findNode(key) != t.nilNode
+}
+
+// VerifyTreeProperties validates Red-Black Tree invariants:
+// 1. Root is always black
+// 2. Red nodes must have black children
+// 3. All paths from node to leaves have same black node count
+// Returns true if all properties are satisfied
+func (t *RBTree[T, K]) VerifyTreeProperties() bool {
+	if t.root.color != Black {
+		return false
+	}
+
+	_, ok := t.checkSubtreeProperties(t.root)
+	return ok
+}
+
+func (t *RBTree[T, K]) checkSubtreeProperties(node *Node[T, K]) (int, bool) {
+	if node == t.nilNode {
+		return 1, true
+	}
+
+	if node.color == Red && (node.left.color == Red || node.right.color == Red) {
+		return 0, false
+	}
+
+	leftCount, leftOk := t.checkSubtreeProperties(node.left)
+	rightCount, rightOk := t.checkSubtreeProperties(node.right)
+
+	if !leftOk || !rightOk || leftCount != rightCount {
+		return 0, false
+	}
+
+	if node.color == Black {
+		leftCount++
+	}
+	return leftCount, true
 }
