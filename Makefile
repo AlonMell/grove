@@ -2,9 +2,7 @@ COVER_PROFILE := coverage.out
 BENCH_PROFILE := bench.out
 MODULE_PATH := github.com/grove
 
-.PHONY: all test cover bench clean
-
-all: test bench  ## Run tests and benchmarks (default)
+.PHONY: test cover cover-html bench lint clean
 
 test:  ## Run unit tests
 	@echo "Running tests..."
@@ -21,6 +19,10 @@ cover-html: test  ## View HTML coverage report
 bench:  ## Run benchmarks
 	@echo "➜ Running benchmarks..."
 	go test -bench=. -benchmem -run=^$$ ./internal/... | tee $(BENCH_PROFILE)
+
+lint:  ## Run linters
+	@echo "➜ Running linters..."
+	golangci-lint run ./...
 
 clean:  ## Clean generated files
 	@echo "➜ Cleaning..."

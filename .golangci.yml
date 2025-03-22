@@ -1,0 +1,23 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - unconvert
+    - typecheck
+    - bodyclose
+    - gocritic
+    - gofmt
+    - goimports
+    - revive
+
+linters-settings:
+  gocritic:
+    enabled-tags:
+      - performance
+      - style
+  revive:
+    rules:
+      - name: context-as-argument
+      - name: error-return

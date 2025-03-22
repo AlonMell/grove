@@ -151,7 +151,7 @@ func (t *RBTree[T, K]) rightRotate(y *Node[T, K]) {
 		      / \                  / \
 		     x   C       →        A   y
 		    / \                      / \
-		   A   B					B   C
+		   A   B                    B   C
 	*/
 	x := y.left
 	y.left = x.right
@@ -282,6 +282,14 @@ func (t *RBTree[T, K]) fixDelete(x *Node[T, K]) {
 		}
 	}
 	x.color = Black
+}
+
+func (t *RBTree[T, K]) Find(key T) (K, bool) {
+	node := t.findNode(key)
+	if node == t.nilNode {
+		return t.nilNode.value, false
+	}
+	return node.value, true
 }
 
 func (t *RBTree[T, K]) findNode(key T) *Node[T, K] {

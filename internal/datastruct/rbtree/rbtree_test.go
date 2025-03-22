@@ -9,10 +9,15 @@ import (
 	"github.com/grove/internal/datastructures/rbtree"
 )
 
-const SIZE = 10_000
+const (
+	BENCH_SIZE = 10_000
+	SIZE       = 10_000
+	SOURCE     = 42
+)
 
-func TestRBTreeProperties(t *testing.T) {
-	random := generateRandomArray(SIZE)
+func TestRBInsert(t *testing.T) {
+	r := rand.New(rand.NewSource(SOURCE))
+	random := generateRandomArray(r, SIZE)
 	sorted := slices.Clone(random)
 	reversed := slices.Clone(random)
 	shuffled := slices.Clone(random)
@@ -21,7 +26,6 @@ func TestRBTreeProperties(t *testing.T) {
 	slices.Sort(reversed)
 	slices.Reverse(reversed)
 
-	r := rand.New(rand.NewSource(42))
 	r.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
@@ -52,10 +56,11 @@ func TestRBTreeProperties(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestRBDelete(t *testing.T) {
+	r := rand.New(rand.NewSource(SOURCE))
 	t.Run("LargeDataset", func(t *testing.T) {
 		rb := rbtree.New[int, float64]()
-		keys := generateRandomArray(SIZE)
+		keys := generateRandomArray(r, SIZE)
 
 		// Insert with dummy values
 		for _, k := range keys {
@@ -68,7 +73,6 @@ func TestDelete(t *testing.T) {
 			}
 		}
 
-		r := rand.New(rand.NewSource(42))
 		// Delete in random order
 		r.Shuffle(len(keys), func(i, j int) {
 			keys[i], keys[j] = keys[j], keys[i]
@@ -91,14 +95,50 @@ func TestDelete(t *testing.T) {
 	})
 }
 
+func TestRBFind(t *testing.T) {
+	r := rand.New(rand.NewSource(SOURCE))
+	rb := rbtree.New[int, int]()
+	keys := generateRandomArray(r, SIZE)
+
+	for _, k := range keys {
+		rb.Insert(k, k)
+	}
+
+	r.Shuffle(len(keys), func(i, j int) {
+		keys[i], keys[j] = keys[j], keys[i]
+	})
+
+	t.Run("KeyExists", func(t *testing.T) {
+		for _, k := range keys {
+			if value, exists := rb.Find(k); !exists {
+				t.Errorf("Key %d not found", k)
+			} else if value != k {
+				t.Errorf("Key %d found with wrong value %d", k, value)
+			}
+		}
+	})
+
+	for _, k := range keys {
+		rb.Delete(k)
+	}
+
+	t.Run("KeyDoesntExist", func(t *testing.T) {
+		for _, k := range keys {
+			if _, exists := rb.Find(k); exists {
+				t.Errorf("Key %d found but it's deleted", k)
+			}
+		}
+	})
+
+}
+
 // Helpers
-func generateRandomArray(size int) []int {
+func generateRandomArray(r *rand.Rand, size int) []int {
 	arr := make([]int, size)
 	for i := range arr {
 		arr[i] = i
 	}
 
-	r := rand.New(rand.NewSource(42))
 	r.Shuffle(size, func(i, j int) {
 		arr[i], arr[j] = arr[j], arr[i]
 	})
@@ -123,22 +163,22 @@ func BenchmarkInsert(b *testing.B) {
 
 func BenchmarkDelete(b *testing.B) {
 	rb := rbtree.New[int, string]()
-	for n := range 10000 {
+	for n := range BENCH_SIZE {
 		rb.Insert(n, "value")
 	}
 
 	for i := 0; b.Loop(); i++ {
-		rb.Delete(i % 10000)
+		rb.Delete(i % BENCH_SIZE)
 	}
 }
 
 func BenchmarkSearch(b *testing.B) {
 	rb := rbtree.New[int, float64]()
-	for n := range 10000 {
+	for n := range BENCH_SIZE {
 		rb.Insert(n, float64(n))
 	}
 
 	for i := 0; b.Loop(); i++ {
-		rb.Exists(i % 10000)
+		rb.Exists(i % BENCH_SIZE)
 	}
 }
