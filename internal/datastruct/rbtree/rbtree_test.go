@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/grove/internal/datastructures/rbtree"
+	"github.com/grove/internal/datastruct/rbtree"
 )
 
 const (
@@ -53,6 +53,31 @@ func TestRBInsert(t *testing.T) {
 				t.Errorf("RBTree properties violated for input %v", tt.name)
 			}
 		})
+	}
+}
+
+func TestRBIterator(t *testing.T) {
+	r := rand.New(rand.NewSource(SOURCE))
+	rb := rbtree.New[int, float64]()
+	keys := generateRandomArray(r, 1000)
+
+	for _, k := range keys {
+		rb.Insert(k, float64(k))
+	}
+
+	res := make([]int, 0, 1000)
+	for k, _ := range rb.InOrder() {
+		res = append(res, k)
+	}
+
+	if len(res) != len(keys) {
+		t.Errorf("Expected %d elements, got %d", len(keys), len(res))
+	}
+
+	for _, k := range keys {
+		if !slices.Contains(res, k) {
+			t.Errorf("Key %d not found in iterator result", k)
+		}
 	}
 }
 

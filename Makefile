@@ -24,6 +24,14 @@ lint:  ## Run linters
 	@echo "➜ Running linters..."
 	golangci-lint run ./...
 
+run: ## Run the server
+	@echo "➜ Running server..."
+	go run cmd/server/main.go
+
+run-client: ## Run the client
+	@echo "➜ Running client..."
+	go run main.go
+
 clean:  ## Clean generated files
 	@echo "➜ Cleaning..."
 	rm -f $(COVER_PROFILE) $(BENCH_PROFILE)

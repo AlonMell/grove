@@ -2,22 +2,71 @@ package main
 
 import (
 	"bufio"
+	"cmp"
+	"context"
 	"fmt"
+	"log"
 	"net"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/grove/internal/store"
 )
 
-type Server struct {
-	db *store.LSMTree
+type Server[T cmp.Ordered, K store.Serializable] struct {
+	db  *store.LSMTree[T, K]
+	ctx context.Context
+	ln  net.Listener
 }
 
-func (s *Server) handleConn(conn net.Conn) {
+func NewServer[T cmp.Ordered, K store.Serializable](
+	ctx context.Context, db *store.LSMTree[T, K], addr string,
+) (*Server[T, K], error) {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Server[T, K]{
+		db:  db,
+		ctx: ctx,
+		ln:  ln,
+	}, nil
+}
+
+func (s *Server[T, K]) Run() {
+	go func() {
+		<-s.ctx.Done()
+		s.ln.Close()
+	}()
+
+	for {
+		conn, err := s.ln.Accept()
+		if err != nil {
+			if s.ctx.Err() != nil {
+				return
+			}
+			log.Printf("Accept error: %v", err)
+			continue
+		}
+		go s.handleConn(conn)
+	}
+}
+
+func (s *Server[T, K]) handleConn(conn net.Conn) {
 	defer conn.Close()
 	scanner := bufio.NewScanner(conn)
 
 	for scanner.Scan() {
+		select {
+		case <-s.ctx.Done():
+			return
+		default:
+		}
+
 		cmd := scanner.Text()
 		parts := strings.SplitN(cmd, " ", 3)
 
@@ -49,17 +98,44 @@ func (s *Server) handleConn(conn net.Conn) {
 }
 
 func main() {
-	db, err := store.NewLSMTree("data")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Инициализация БД
+	db, err := store.NewLSMTree[int, string](ctx, "data")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	server := &Server{db: db}
-	ln, _ := net.Listen("tcp", ":9736")
-	defer ln.Close()
-
-	for {
-		conn, _ := ln.Accept()
-		go server.handleConn(conn)
+	// Запуск сервера
+	server, err := NewServer[int, string](ctx, db, ":9736")
+	if err != nil {
+		log.Fatal(err)
 	}
+	go server.Run()
+
+	// Обработка сигналов
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case sig := <-sigCh:
+		log.Printf("Received signal: %v", sig)
+	case <-ctx.Done():
+	}
+
+	// Graceful shutdown
+	log.Println("Initiating shutdown...")
+	cancel()
+
+	// Даем время на завершение активных соединений
+	time.Sleep(1 * time.Second)
+
+	// Принудительный сброс данных
+	log.Println("Flushing remaining data...")
+	if err := db.Flush(); err != nil {
+		log.Printf("Flush error: %v", err)
+	}
+
+	log.Println("Server shutdown complete")
 }

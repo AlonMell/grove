@@ -4,12 +4,12 @@ run:
 
 linters:
   enable:
+    - cyclop
+    - funlen
     - unconvert
     - typecheck
     - bodyclose
     - gocritic
-    - gofmt
-    - goimports
     - revive
 
 linters-settings:
