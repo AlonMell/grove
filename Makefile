@@ -1,6 +1,6 @@
 COVER_PROFILE := coverage.out
 BENCH_PROFILE := bench.out
-MODULE_PATH := github.com/grove
+MODULE_PATH := github.com/AlonMell/grove
 
 .PHONY: test cover cover-html bench lint clean
 
