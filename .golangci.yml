@@ -1,0 +1,65 @@
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+  concurrency: 4
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+    - bodyclose
+    - errorlint
+    - gocritic
+    - revive
+    - gosec
+    - unconvert
+    - cyclop
+    - funlen
+
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+
+    gocritic:
+      enabled-tags:
+        - performance
+        - style
+        - diagnostic
+
+    revive:
+      rules:
+        - name: context-as-argument
+        - name: error-return
+        - name: exported
+          arguments:
+            - checkPrivateReceivers
+
+    cyclop:
+      max-complexity: 15
+
+    funlen:
+      lines: 80
+      statements: 50
+
+    gosec:
+      excludes:
+        - G204
+        - G304
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
