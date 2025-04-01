@@ -18,7 +18,7 @@ func (t *RBTree) InOrder() iter.Seq2[string, string] {
 			current = stack[len(stack)-1]
 			stack = stack[:len(stack)-1]
 
-			if !yield(current.key, current.val) {
+			if !yield(current.Key, current.Val) {
 				return
 			}
 

@@ -9,17 +9,17 @@ import (
 	"errors"
 )
 
-type Color bool
+type color bool
 
 const (
-	Red   Color = true
-	Black Color = false
+	red   color = true
+	black color = false
 )
 
 type Node struct {
-	key                 string
-	val                 string
-	color               Color
+	Key                 string
+	Val                 string
+	color               color
 	left, right, parent *Node
 }
 
@@ -32,7 +32,7 @@ type RBTree struct {
 
 // New creates and returns a new empty Red-Black Tree.
 func New() *RBTree {
-	nilNode := &Node{color: Black}
+	nilNode := &Node{color: black}
 	return &RBTree{
 		root:    nilNode,
 		nilNode: nilNode,
@@ -43,9 +43,9 @@ func New() *RBTree {
 // Red-Black Tree properties.
 func (t *RBTree) Insert(key string, val string) {
 	newNode := &Node{
-		key:    key,
-		val:    val,
-		color:  Red,
+		Key:    key,
+		Val:    val,
+		color:  red,
 		left:   t.nilNode,
 		right:  t.nilNode,
 		parent: t.nilNode,
@@ -56,7 +56,7 @@ func (t *RBTree) Insert(key string, val string) {
 
 	for current != t.nilNode {
 		parent = current
-		if newNode.key < current.key {
+		if newNode.Key < current.Key {
 			current = current.left
 		} else {
 			current = current.right
@@ -66,7 +66,7 @@ func (t *RBTree) Insert(key string, val string) {
 	newNode.parent = parent
 	if parent == t.nilNode {
 		t.root = newNode
-	} else if newNode.key < parent.key {
+	} else if newNode.Key < parent.Key {
 		parent.left = newNode
 	} else {
 		parent.right = newNode
@@ -76,42 +76,42 @@ func (t *RBTree) Insert(key string, val string) {
 }
 
 func (t *RBTree) fixInsert(x *Node) {
-	for x.parent.color == Red {
+	for x.parent.color == red {
 		if x.parent == x.parent.parent.left {
 			y := x.parent.parent.right
-			if y.color == Red {
-				x.parent.color = Black
-				y.color = Black
-				x.parent.parent.color = Red
+			if y.color == red {
+				x.parent.color = black
+				y.color = black
+				x.parent.parent.color = red
 				x = x.parent.parent
 			} else {
 				if x == x.parent.right {
 					x = x.parent
 					t.leftRotate(x)
 				}
-				x.parent.color = Black
-				x.parent.parent.color = Red
+				x.parent.color = black
+				x.parent.parent.color = red
 				t.rightRotate(x.parent.parent)
 			}
 		} else {
 			y := x.parent.parent.left
-			if y.color == Red {
-				x.parent.color = Black
-				y.color = Black
-				x.parent.parent.color = Red
+			if y.color == red {
+				x.parent.color = black
+				y.color = black
+				x.parent.parent.color = red
 				x = x.parent.parent
 			} else {
 				if x == x.parent.left {
 					x = x.parent
 					t.rightRotate(x)
 				}
-				x.parent.color = Black
-				x.parent.parent.color = Red
+				x.parent.color = black
+				x.parent.parent.color = red
 				t.leftRotate(x.parent.parent)
 			}
 		}
 	}
-	t.root.color = Black
+	t.root.color = black
 }
 
 func (t *RBTree) leftRotate(x *Node) {
@@ -210,11 +210,11 @@ func (t *RBTree) Delete(key string) (string, error) {
 		y.color = z.color
 	}
 
-	if yOriginalColor == Black {
+	if yOriginalColor == black {
 		t.fixDelete(x)
 	}
 
-	return z.val, nil
+	return z.Val, nil
 }
 
 func (t *RBTree) transplant(u, v *Node) {
@@ -236,74 +236,74 @@ func (t *RBTree) minimum(x *Node) *Node {
 }
 
 func (t *RBTree) fixDelete(x *Node) {
-	for x != t.root && x.color == Black {
+	for x != t.root && x.color == black {
 		if x == x.parent.left {
 			w := x.parent.right
-			if w.color == Red {
-				w.color = Black
-				x.parent.color = Red
+			if w.color == red {
+				w.color = black
+				x.parent.color = red
 				t.leftRotate(x.parent)
 				w = x.parent.right
 			}
-			if w.left.color == Black && w.right.color == Black {
-				w.color = Red
+			if w.left.color == black && w.right.color == black {
+				w.color = red
 				x = x.parent
 			} else {
-				if w.right.color == Black {
-					w.left.color = Black
-					w.color = Red
+				if w.right.color == black {
+					w.left.color = black
+					w.color = red
 					t.rightRotate(w)
 					w = x.parent.right
 				}
 				w.color = x.parent.color
-				x.parent.color = Black
-				w.right.color = Black
+				x.parent.color = black
+				w.right.color = black
 				t.leftRotate(x.parent)
 				x = t.root
 			}
 		} else {
 			w := x.parent.left
-			if w.color == Red {
-				w.color = Black
-				x.parent.color = Red
+			if w.color == red {
+				w.color = black
+				x.parent.color = red
 				t.rightRotate(x.parent)
 				w = x.parent.left
 			}
-			if w.right.color == Black && w.left.color == Black {
-				w.color = Red
+			if w.right.color == black && w.left.color == black {
+				w.color = red
 				x = x.parent
 			} else {
-				if w.left.color == Black {
-					w.right.color = Black
-					w.color = Red
+				if w.left.color == black {
+					w.right.color = black
+					w.color = red
 					t.leftRotate(w)
 					w = x.parent.left
 				}
 				w.color = x.parent.color
-				x.parent.color = Black
-				w.left.color = Black
+				x.parent.color = black
+				w.left.color = black
 				t.rightRotate(x.parent)
 				x = t.root
 			}
 		}
 	}
-	x.color = Black
+	x.color = black
 }
 
 func (t *RBTree) Find(key string) (string, bool) {
 	node := t.findNode(key)
 	if node == t.nilNode {
-		return t.nilNode.val, false
+		return t.nilNode.Val, false
 	}
-	return node.val, true
+	return node.Val, true
 }
 
 func (t *RBTree) findNode(key string) *Node {
 	current := t.root
 	for current != t.nilNode {
-		if key == current.key {
+		if key == current.Key {
 			return current
-		} else if key < current.key {
+		} else if key < current.Key {
 			current = current.left
 		} else {
 			current = current.right
@@ -323,7 +323,7 @@ func (t *RBTree) Exists(key string) bool {
 // 3. All paths from node to leaves have same black node count
 // Returns true if all properties are satisfied
 func (t *RBTree) VerifyTreeProperties() bool {
-	if t.root.color != Black {
+	if t.root.color != black {
 		return false
 	}
 
@@ -336,7 +336,7 @@ func (t *RBTree) checkSubtreeProperties(node *Node) (int, bool) {
 		return 1, true
 	}
 
-	if node.color == Red && (node.left.color == Red || node.right.color == Red) {
+	if node.color == red && (node.left.color == red || node.right.color == red) {
 		return 0, false
 	}
 
@@ -347,7 +347,7 @@ func (t *RBTree) checkSubtreeProperties(node *Node) (int, bool) {
 		return 0, false
 	}
 
-	if node.color == Black {
+	if node.color == black {
 		leftCount++
 	}
 	return leftCount, true
